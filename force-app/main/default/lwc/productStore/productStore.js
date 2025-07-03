@@ -60,7 +60,7 @@ export default class ProductStore extends LightningElement {
             });
             this.products = data;
 
-            // Calcula total de stock
+            // Calculate total of Stock
             this.totalStock = this.products.reduce((sum, p) => sum + (p.Stock || 0), 0);
         } catch (error) {
             console.error('Error loading products:', JSON.stringify(error));

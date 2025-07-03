@@ -1,17 +1,18 @@
 public with sharing class ProductImporter {
 
+    // Only inserts new products (does not update existing)
     @AuraEnabled
     public static void importProducts() {
         String token = DummyJsonApi.login();
         List<Map<String, Object>> products = DummyJsonApi.getProducts(token, '');
 
-        // Já existentes (por SKU)
+        // Existing products (by SKU)
         Set<String> existingSkus = new Set<String>();
         for (Product2 p : [SELECT ProductCode FROM Product2]) {
             existingSkus.add(p.ProductCode);
         }
 
-        // Contadores por categoria
+        // Counters per category
         Map<String, Integer> countPerCat = new Map<String, Integer>();
         Map<String, Decimal> sumPerCat = new Map<String, Decimal>();
         for (AggregateResult ar : [
@@ -59,9 +60,9 @@ public with sharing class ProductImporter {
         if (!inserts.isEmpty()) insert inserts;
     }
 
+    // Returns existing products with optional filtering
     @AuraEnabled(cacheable=true)
     public static List<ProductDTO> getProducts(String categoryFilter, String brandFilter, String nameFilter) {
-        String namePattern = '%' + nameFilter + '%';
         String baseQuery = 'SELECT Id, Name, Brand__c, Category__c, Price__c, Stock__c, Thumbnail__c FROM Product2';
         List<String> conditions = new List<String>();
 
@@ -75,15 +76,15 @@ public with sharing class ProductImporter {
             conditions.add('Name LIKE :namePattern');
         }
 
-        String whereClause = '';
+        String finalQuery = baseQuery;
         if (!conditions.isEmpty()) {
-            whereClause = ' WHERE ' + String.join(conditions, ' AND ');
+            finalQuery += ' WHERE ' + String.join(conditions, ' AND ');
         }
+        finalQuery += ' ORDER BY CreatedDate DESC';
 
-        String fullQuery = baseQuery + whereClause + ' ORDER BY CreatedDate DESC';
-        System.debug('SOQL = ' + fullQuery);
+        String namePattern = '%' + nameFilter + '%';
 
-        List<Product2> products = Database.query(fullQuery);
+        List<Product2> products = Database.query(finalQuery);
 
         List<ProductDTO> dtos = new List<ProductDTO>();
         for (Product2 p : products) {
@@ -92,7 +93,7 @@ public with sharing class ProductImporter {
         return dtos;
     }
 
-
+    // Returns distinct existing categories
     @AuraEnabled(cacheable=true)
     public static List<String> getExistingCategories() {
         List<String> categories = new List<String>();
@@ -108,6 +109,7 @@ public with sharing class ProductImporter {
         return categories;
     }
 
+    // Returns distinct existing brands
     @AuraEnabled(cacheable=true)
     public static List<String> getExistingBrands() {
         List<String> brands = new List<String>();
@@ -142,5 +144,4 @@ public with sharing class ProductImporter {
             this.Thumbnail = p.Thumbnail__c != null ? p.Thumbnail__c : '';
         }
     }
-
 }
