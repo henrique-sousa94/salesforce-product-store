@@ -1,0 +1,56 @@
+<template>
+    <lightning-card title="Product Store">
+        <div class="slds-p-around_medium">
+            <lightning-combobox
+                label="Filter by Category"
+                options={categoryOptions}
+                value={selectedCategory}
+                onchange={handleCategoryChange}>
+            </lightning-combobox>
+
+            <lightning-combobox
+                label="Filter by Brand"
+                options={brandOptions}
+                value={selectedBrand}
+                onchange={handleBrandChange}>
+            </lightning-combobox>
+
+            <lightning-input
+                label="Search by Name"
+                value={nameFilter}
+                onchange={handleNameInput}>
+            </lightning-input>
+
+            <lightning-button label="Search by Product Name" onclick={loadFilteredProducts}></lightning-button>
+            <lightning-button label="Refresh Products" onclick={refreshProducts}></lightning-button>
+
+            <template if:true={loading}>
+                <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+            </template>
+
+            <template if:true={products}>
+                <template if:true={products.length}>
+                    <p class="slds-m-vertical_small">
+                        <strong>Total Stock:</strong> {totalStock}
+                    </p>
+                    <div class="slds-grid slds-wrap slds-m-top_medium">
+                        <template for:each={products} for:item="prod">
+                            <div key={prod.Id} class="slds-col slds-size_1-of-3 slds-p-around_small">
+                                <div class="slds-box">
+                                    <img src={prod.Thumbnail} alt={prod.Name} style="width:100px;">
+                                    <h3>{prod.Name}</h3>
+                                    <p>{prod.Brand} / {prod.Category}</p>
+                                    <p>Price: ${prod.Price}</p>
+                                    <p>Stock: {prod.Stock}</p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={products.length}>
+                    <p class="slds-m-top_medium">No products to display.</p>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>
